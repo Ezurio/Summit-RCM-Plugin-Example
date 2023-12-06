@@ -1,0 +1,6 @@
+config BR2_PACKAGE_SUMMIT_RCM_HELLO_WORLD_PLUGIN
+	bool "Hello World plugin for Summit RCM"
+	depends on BR2_PACKAGE_SUMMIT_RCM
+	default y
+	help
+		Add Hello World configuration support to Summit RCM.
