@@ -1,5 +1,7 @@
-"""Init File to setup the Hello World Plugin"""
+"""Init File to setup the Log Forwarding Plugin"""
 from syslog import syslog, LOG_ERR
+from typing import Optional
+import summit_rcm
 
 
 def get_at_commands():
@@ -14,7 +16,7 @@ def get_at_commands():
     except ImportError:
         pass
     except Exception as exception:
-        syslog(LOG_ERR, f"Error Importing Hello World AT Commands: {str(exception)}")
+        syslog(LOG_ERR, f"Error Importing hello world AT Commands: {str(exception)}")
     return at_commands
 
 
@@ -26,14 +28,15 @@ async def get_legacy_routes():
             HelloWorldService,
         )
         from summit_rcm_hello_world.rest_api.legacy.hello_world import (
-            HelloWorldResourceLegacy,
+            HelloWorld,
         )
 
-        routes["/helloWorld"] = HelloWorldResourceLegacy()
+        summit_rcm.SessionCheckingMiddleware().paths.append("HelloWorld")
+        routes["/helloWorld"] = HelloWorld()
     except ImportError:
         pass
     except Exception as exception:
-        syslog(LOG_ERR, f"Error Importing Hello World legacy routes: {str(exception)}")
+        syslog(LOG_ERR, f"Error Importing hello world legacy routes: {str(exception)}")
     return routes
 
 
@@ -52,5 +55,18 @@ async def get_v2_routes():
     except ImportError:
         pass
     except Exception as exception:
-        syslog(LOG_ERR, f"Error Importing Hello World v2 routes: {str(exception)}")
+        syslog(LOG_ERR, f"Error Importing hello world v2 routes: {str(exception)}")
     return routes
+
+
+async def get_middleware() -> Optional[list]:
+    """Handler called when adding Falcon middleware"""
+    return None
+
+
+async def server_config_preload_hook(_) -> None:
+    """Hook function called before the Uvicorn ASGI server config is loaded"""
+
+
+async def server_config_postload_hook(_) -> None:
+    """Hook function called after the Uvicorn ASGI server config is loaded"""
