@@ -33,7 +33,7 @@ This repo is meant as a working example of creating a simple plugin for Summit-R
 ```bash
 └── NAME_OF_EXTERNAL-external
     └── package
-		├── Config.in  # Config.in file for any packages, which will be modified later
+	├── Config.in  # Config.in file for any packages, which will be modified later
         └── summit-rcm-hello-world-plugin  # summit-rcm-NAME-OF-PLUGIN-plugin
             ├── Config.in  # Config.in for the plugin
             └── summit-rcm-hello-world-plugin.mk  # Makefile for the plugin
@@ -60,7 +60,7 @@ config BR2_PACKAGE_SUMMIT_RCM_HELLO_WORLD_PLUGIN  # Name of Plugin
 # Summit Remote Control Manager (RCM) Hello World Plugin
 #####################################################################
 
-SUMMIT_RCM_HELLO_WORLD_PLUGIN_VERSION = local  # All Makefile parameters will be in the form of SUMMIT_RCM_NAME_OF_PLUGIN_PLUGIN_THE_PARAMETER
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_VERSION = local  # All Makefile parameters will be in the form of SUMMIT_RCM_NAME_OF_PLUGIN_PLUGIN_PARAMETER
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE = PATH_TO_EXTERNAL_SPECIFIC_PLUGINS_DIRECTORY/plugins/hello_world  # Location of plugin code
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE_METHOD = local
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_SETUP_TYPE = setuptools
@@ -239,11 +239,13 @@ else:
 
 6. Create the contents for the __init__.py of the plugin:
 ```python
-"""Init File to setup the Hello World Plugin"""
+"""Init File to setup the Log Forwarding Plugin"""
 from syslog import syslog, LOG_ERR
+from typing import Optional
+import summit_rcm
 
 
-def get_at_commands():  # Must be named "get_at_commands()"
+def get_at_commands():
     """Function to import and return Hello World AT Commands"""
     at_commands = []
     try:
@@ -255,11 +257,11 @@ def get_at_commands():  # Must be named "get_at_commands()"
     except ImportError:
         pass
     except Exception as exception:
-        syslog(LOG_ERR, f"Error Importing Hello World AT Commands: {str(exception)}")
-    return at_commands  # Return a list of AT Commands
+        syslog(LOG_ERR, f"Error Importing hello world AT Commands: {str(exception)}")
+    return at_commands
 
 
-async def get_legacy_routes():  # Must be async and named "get_legacy_routes()"
+async def get_legacy_routes():
     """Function to import and return Hello World API Routes"""
     routes = {}
     try:
@@ -267,18 +269,19 @@ async def get_legacy_routes():  # Must be async and named "get_legacy_routes()"
             HelloWorldService,
         )
         from summit_rcm_hello_world.rest_api.legacy.hello_world import (
-            HelloWorldResourceLegacy,
+            HelloWorld,
         )
 
-        routes["/helloWorld"] = HelloWorldResourceLegacy()
+        summit_rcm.SessionCheckingMiddleware().paths.append("HelloWorld")
+        routes["/helloWorld"] = HelloWorld()
     except ImportError:
         pass
     except Exception as exception:
-        syslog(LOG_ERR, f"Error Importing Hello World legacy routes: {str(exception)}")
-    return routes  # Return a dict of API routes and API Resources
+        syslog(LOG_ERR, f"Error Importing hello world legacy routes: {str(exception)}")
+    return routes
 
 
-async def get_v2_routes():  # Must be async and named "get_legacy_routes()"
+async def get_v2_routes():
     """Function to import and return Hello World API Routes"""
     routes = {}
     try:
@@ -293,8 +296,22 @@ async def get_v2_routes():  # Must be async and named "get_legacy_routes()"
     except ImportError:
         pass
     except Exception as exception:
-        syslog(LOG_ERR, f"Error Importing Hello World v2 routes: {str(exception)}")
-    return routes  # Return a dict of API routes and API Resources
+        syslog(LOG_ERR, f"Error Importing hello world v2 routes: {str(exception)}")
+    return routes
+
+
+async def get_middleware() -> Optional[list]:
+    """Handler called when adding Falcon middleware"""
+    return None
+
+
+async def server_config_preload_hook(_) -> None:
+    """Hook function called before the Uvicorn ASGI server config is loaded"""
+
+
+async def server_config_postload_hook(_) -> None:
+    """Hook function called after the Uvicorn ASGI server config is loaded"""
+
 ```
 
 7. Create the contents of the AT Commands or API files needed
@@ -310,7 +327,7 @@ from summit_rcm.at_interface.commands.command import Command  # Must import Comm
 from summit_rcm_hello_world.services.hello_world_service import HelloWorldService
 
 
-class HelloWorldCommand(Command):  # Must take in the Command base class and requires an execute, parse params, usage, signature, and name function
+class HelloWorldCommand(Command):  # Must take in the Command base class and requires an execute, parse params, usage, signature, and name
     """
     AT Command to print 'Hello World'
     """
@@ -361,7 +378,7 @@ Ex: Legacy Endpoint
 Module to support the printing of 'Hello World'
 """
 
-import falcon
+import falcon.asgi
 from summit_rcm import definition
 from summit_rcm_hello_world.services.hello_world_service import HelloWorldService
 
