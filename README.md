@@ -237,7 +237,7 @@ else:
 
 ``` 
 
-6. Create the contents for the __init__.py of the plugin:
+6. Create the contents for the ``__init__.py`` of the plugin:
 ```python
 """Init File to setup the Log Forwarding Plugin"""
 from syslog import syslog, LOG_ERR
