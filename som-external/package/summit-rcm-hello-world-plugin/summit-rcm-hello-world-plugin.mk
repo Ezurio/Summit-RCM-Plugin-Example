@@ -3,8 +3,10 @@
 #####################################################################
 
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_VERSION = local
-SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE = $(BR2_EXTERNAL_LRD_SOM_PATH)/package/lrd/externals/summit-rcm/summit_rcm/plugins/hello_world
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE = $(BR2_EXTERNAL_SUMMIT_SOM_PATH)/externals/summit-rcm/summit_rcm/plugins/hello_world
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE_METHOD = local
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_LICENSE = Ezurio
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_LICENSE_FILES = LICENSE.ezurio
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_SETUP_TYPE = setuptools
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_DEPENDENCIES = python3 summit-rcm
 
