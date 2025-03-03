@@ -1,0 +1,1 @@
+source "$BR2_EXTERNAL_SUMMIT_SOM_PATH/package/summit-rcm-hello-world-plugin/Config.in"
