@@ -1,9 +1,13 @@
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 """
 Module to support the printing of 'Hello World'.
 """
 
 
-class HelloWorldService():
+class HelloWorldService:
     """
     Exposes functionality to print 'Hello World'.
     """
