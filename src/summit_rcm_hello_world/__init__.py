@@ -1,7 +1,10 @@
-"""Init File to setup the Log Forwarding Plugin"""
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
+"""Init File to setup the Hello World Plugin"""
 from syslog import syslog, LOG_ERR
 from typing import Optional
-import summit_rcm
 
 
 def get_at_commands():
@@ -20,6 +23,13 @@ def get_at_commands():
     return at_commands
 
 
+async def get_legacy_supported_routes():
+    """Optional Function to return supported legacy routes"""
+    routes = []
+    routes.append("/helloWorld")
+    return routes
+
+
 async def get_legacy_routes():
     """Function to import and return Hello World API Routes"""
     routes = {}
@@ -28,15 +38,21 @@ async def get_legacy_routes():
             HelloWorldService,
         )
         from summit_rcm_hello_world.rest_api.legacy.hello_world import (
-            HelloWorld,
+            HelloWorldResourceLegacy,
         )
 
-        summit_rcm.SessionCheckingMiddleware().paths.append("HelloWorld")
-        routes["/helloWorld"] = HelloWorld()
+        routes["/helloWorld"] = HelloWorldResourceLegacy()
     except ImportError:
         pass
     except Exception as exception:
         syslog(LOG_ERR, f"Error Importing hello world legacy routes: {str(exception)}")
+    return routes
+
+
+async def get_v2_supported_routes():
+    """Optional Function to return supported v2 routes"""
+    routes = []
+    routes.append("/api/v2/system/helloWorld")
     return routes
 
 

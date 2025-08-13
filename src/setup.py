@@ -1,4 +1,8 @@
 #!/usr/bin/python
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 
 import glob
 import os
@@ -20,7 +24,9 @@ class BuildFailed(Exception):
 
 
 packages = []
-environment_variable_value = os.environ.get("SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES", "")
+environment_variable_value = os.environ.get(
+    "SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES", ""
+)
 if len(environment_variable_value) > 0:
     extra_packages = [s.strip() for s in environment_variable_value.split()]
 else:
@@ -71,7 +77,7 @@ def get_cython_options():
 
     package_names = [p.replace("/", ".") for p in packages]
 
-    modules_to_exclude = []
+    modules_to_exclude = ["summit_rcm_hello_world.rest_api.utils.spectree.models"]
 
     cython_package_names = frozenset([])
 
@@ -108,7 +114,7 @@ def run_setup(CYTHON):
         cmdclass=cmdclass,
         version="1.0",
         packages=packages,
-        ext_modules=ext_modules
+        ext_modules=ext_modules,
     )
 
 
