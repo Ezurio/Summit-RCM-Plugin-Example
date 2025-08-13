@@ -1,0 +1,10 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "cython>=0.29.36"]
+
+[project]
+name = "summit_rcm_hello_world_plugin"
+version = "1.0"
+description = "Summit Remote Control Manager (RCM) Hello World Plugin"
+license = { file = "LICENSE.ezurio" }
+dependencies = []

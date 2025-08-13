@@ -1,69 +1,79 @@
 # Summit-RCM-Plugin-Example
 Summit RCM Plugin Example Repo
 
-This repo is meant as a working example of creating a simple plugin for Summit-RCM
+This repo is meant as a working example of a Summit RCM plugin integrated into a custom Buildroot "external" directory.
 
 ## Getting Started
-1. Create the directory tree for a Summit-RCM Plugin:
-```bash
-.
-├── plugins  # Root plugins directory
-│   └── hello_world  # Name of the plugin
-│       ├── setup.py
-│       └── summit_rcm_hello_world  # summit_rcm_NAME_OF_PLUGIN
-│           ├── __init__.py
-│           ├── at_interface  # If the plugin includes an AT Command
-│           │   └── commands
-│           │       ├── __init__.py
-│           │       └── hello_world_command.py
-│           ├── rest_api
-│           │   ├── legacy
-│           │   │   ├── __init__.py
-│           │   │   └── hello_world.py
-│           │   └── v2
-│           │       └── system
-│           │           ├── __init__.py
-│           │           └── hello_world.py
-│           └── services
-│               ├── __init__.py
-│               └── hello_world_service.py
+1. Clone this repo under the `package` sub-directory of your custom Buildroot "external" directory.
+```
+cd my_br2_external/package
+git clone git@github.com:Ezurio/Summit-RCM-Plugin-Example.git summit-rcm-hello-world-plugin
 ```
 
-2. Create the directory for a Summit-RCM package in NAME_OF_EXTERNAL-external/package/:
+Your Buildroot "external" directory should now look something like this:
+
 ```bash
-└── NAME_OF_EXTERNAL-external
-    └── package
-	├── Config.in  # Config.in file for any packages, which will be modified later
-        └── summit-rcm-hello-world-plugin  # summit-rcm-NAME-OF-PLUGIN-plugin
-            ├── Config.in  # Config.in for the plugin
-            └── summit-rcm-hello-world-plugin.mk  # Makefile for the plugin
+.
+├── Config.in  # Config.in file for any packages, which will be modified later
+├── package
+│   └── summit-rcm-hello-world-plugin  # summit-rcm-NAME-OF-PLUGIN-plugin
+│       ├── Config.in  # Config.in for the plugin
+│       ├── pyproject.toml  # Python project file for the plugin
+│       ├── src
+│       │   ├── generate_docs.py
+│       │   ├── setup.py
+│       │   └── summit_rcm_hello_world  # summit_rcm_NAME_OF_PLUGIN
+│       │       ├── __init__.py
+│       │       ├── at_interface  # If the plugin includes an AT Command
+│       │       │   └── commands
+│       │       │       ├── hello_world_command.py
+│       │       │       └── __init__.py
+│       │       ├── rest_api
+│       │       │   ├── legacy  # If the plugin includes a legacy REST endpoint
+│       │       │   │   ├── hello_world.py
+│       │       │   │   └── __init__.py
+│       │       │   ├── utils
+│       │       │   │   └── spectree
+│       │       │   │       ├── __init__.py
+│       │       │   │       └── models.py  # If REST API live doc model definitions are included
+│       │       │   └── v2  # If the plugin includes a v2 REST endpoint
+│       │       │       └── system
+│       │       │           ├── hello_world.py
+│       │       │           └── __init__.py
+│       │       └── services
+│       │           ├── hello_world_service.py
+│       │           └── __init__.py
+│       └── summit-rcm-hello-world-plugin.mk  # Makefile for the plugin
+└── ...
 ```
  
-3. Update the NAME_OF_EXTERNAL-external/package/Config.in file seen above to include the plugin Config.in:
+2. Update the top-level `Config.in` file for your Buildroot "external" directory as seen above to include the plugin `Config.in`. For example, add something like this:
 ```bash
 source "$BR2_EXTERNAL_NAME_OF_EXTERNAL_PATH/package/summit-rcm-hello-world-plugin/Config.in"
 ```
 
-4. Create the content of the Config.in file for the plugin, which will include any configuration options/dependencies:
+3. Create the content of the Config.in file for the plugin, which will include any configuration options/dependencies:
 ```bash
 config BR2_PACKAGE_SUMMIT_RCM_HELLO_WORLD_PLUGIN  # Name of Plugin
 	bool "Hello World plugin for Summit RCM"
-	depends on BR2_PACKAGE_SUMMIT_RCM  # Dependent on Summit-RCM
+	depends on BR2_PACKAGE_SUMMIT_RCM  # Dependent on Summit RCM
 	default y
 	help
 		Add Hello World configuration support to Summit RCM.
 ```
 
-5. Create the content of the Makefile for the plugin:
+4. Create the content of the Makefile for the plugin:
 ```bash
 #####################################################################
 # Summit Remote Control Manager (RCM) Hello World Plugin
 #####################################################################
 
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_VERSION = local  # All Makefile parameters will be in the form of SUMMIT_RCM_NAME_OF_PLUGIN_PLUGIN_PARAMETER
-SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE = PATH_TO_EXTERNAL_SPECIFIC_PLUGINS_DIRECTORY/plugins/hello_world  # Location of plugin code
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE = $(SUMMIT_RCM_HELLO_WORLD_PLUGIN_PKGDIR)/src # Location of plugin code
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_SITE_METHOD = local
-SUMMIT_RCM_HELLO_WORLD_PLUGIN_SETUP_TYPE = setuptools
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_LICENSE = Ezurio
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_LICENSE_FILES = LICENSE.ezurio
+SUMMIT_RCM_HELLO_WORLD_PLUGIN_SETUP_TYPE = pep517
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_DEPENDENCIES = python3 summit-rcm
 
 ifeq ($(BR2_PACKAGE_HOST_PYTHON_CYTHON),y)
@@ -84,14 +94,38 @@ ifeq ($(BR2_PACKAGE_SUMMIT_RCM_REST_API_LEGACY_ROUTES),y)  # Include the legacy 
     SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES += summit_rcm_hello_world/rest_api/legacy
 endif
 
+ifeq ($(BR2_PACKAGE_SUMMIT_RCM_REST_API_DOCS),y)  # Generate the REST API live docs for the plugin, if enabled
+	SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES += summit_rcm_hello_world/rest_api/utils/spectree
+	SUMMIT_RCM_HELLO_WORLD_PLUGIN_DEPENDENCIES += host-summit-rcm-hello-world-plugin
+	HOST_SUMMIT_RCM_HELLO_WORLD_PLUGIN_DEPENDENCIES += \
+		host-summit-rcm \
+		host-python3 \
+		host-python-falcon \
+		host-python-spectree \
+		host-python-pydantic \
+		host-python-typing-extensions
+	HOST_SUMMIT_RCM_HELLO_WORLD_PLUGIN_ENV = \
+		DOCS_GENERATION='True' \
+		OPENAPI_JSON_PATH='$(TARGET_DIR)/summit-rcm-openapi-hello-world-plugin.json' \
+		SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES='$(SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES)'
+	HOST_SUMMIT_RCM_HELLO_WORLD_PLUGIN_BUILD_OPTS = && \
+		$(HOST_SUMMIT_RCM_HELLO_WORLD_PLUGIN_ENV) \
+		$(HOST_DIR)/bin/python3 generate_docs.py
+endif
+
 SUMMIT_RCM_HELLO_WORLD_PLUGIN_ENV = SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES='$(SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES)'  # Sets the environment to the extra packages
 
 $(eval $(python-package))  # Run the setup.py file for the plugin
+$(eval $(host-python-package)) # Run the setup.py file for generating documentation for the plugin
 ```
 
 5. Create the contents of the setup.py file for the plugin:
 ```python
 #!/usr/bin/python
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 
 import glob
 import os
@@ -113,7 +147,9 @@ class BuildFailed(Exception):
 
 
 packages = []
-environment_variable_value = os.environ.get("SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES", "")  # Get the plugin extra packages
+environment_variable_value = os.environ.get(
+    "SUMMIT_RCM_HELLO_WORLD_PLUGIN_EXTRA_PACKAGES", ""
+)  # Get the plugin extra packages
 if len(environment_variable_value) > 0:
     extra_packages = [s.strip() for s in environment_variable_value.split()]
 else:
@@ -164,7 +200,7 @@ def get_cython_options():
 
     package_names = [p.replace("/", ".") for p in packages]
 
-    modules_to_exclude = []
+    modules_to_exclude = ["summit_rcm_hello_world.rest_api.utils.spectree.models"]
 
     cython_package_names = frozenset([])
 
@@ -201,7 +237,7 @@ def run_setup(CYTHON):
         cmdclass=cmdclass,
         version="1.0",
         packages=packages,
-        ext_modules=ext_modules
+        ext_modules=ext_modules,
     )
 
 
@@ -239,10 +275,13 @@ else:
 
 6. Create the contents for the ``__init__.py`` of the plugin:
 ```python
-"""Init File to setup the Log Forwarding Plugin"""
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
+"""Init File to setup the Hello World Plugin"""
 from syslog import syslog, LOG_ERR
 from typing import Optional
-import summit_rcm
 
 
 def get_at_commands():
@@ -261,6 +300,13 @@ def get_at_commands():
     return at_commands
 
 
+async def get_legacy_supported_routes():
+    """Optional Function to return supported legacy routes"""
+    routes = []
+    routes.append("/helloWorld")
+    return routes
+
+
 async def get_legacy_routes():
     """Function to import and return Hello World API Routes"""
     routes = {}
@@ -269,15 +315,21 @@ async def get_legacy_routes():
             HelloWorldService,
         )
         from summit_rcm_hello_world.rest_api.legacy.hello_world import (
-            HelloWorld,
+            HelloWorldResourceLegacy,
         )
 
-        summit_rcm.SessionCheckingMiddleware().paths.append("HelloWorld")
-        routes["/helloWorld"] = HelloWorld()
+        routes["/helloWorld"] = HelloWorldResourceLegacy()
     except ImportError:
         pass
     except Exception as exception:
         syslog(LOG_ERR, f"Error Importing hello world legacy routes: {str(exception)}")
+    return routes
+
+
+async def get_v2_supported_routes():
+    """Optional Function to return supported v2 routes"""
+    routes = []
+    routes.append("/api/v2/system/helloWorld")
     return routes
 
 
@@ -318,6 +370,10 @@ async def server_config_postload_hook(_) -> None:
 
 Ex: AT Command
 ```python
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 """
 File that consists of the HelloWorld Command Functionality
 """
@@ -370,17 +426,49 @@ class HelloWorldCommand(Command):  # Must take in the Command base class and req
     @staticmethod
     def name() -> str:
         return HelloWorldCommand.NAME
+
 ```
 
 Ex: Legacy Endpoint
 ```python
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 """
 Module to support the printing of 'Hello World'
 """
 
 import falcon.asgi
+from summit_rcm.settings import ServerConfig
+from summit_rcm.rest_api.services.spectree_service import (
+    DocsNotEnabledException,
+    SpectreeService,
+)
 from summit_rcm import definition
 from summit_rcm_hello_world.services.hello_world_service import HelloWorldService
+
+try:
+    if not ServerConfig().rest_api_docs_enabled:
+        raise DocsNotEnabledException()
+
+    from spectree import Response
+    from summit_rcm.rest_api.utils.spectree.models import (
+        UnauthorizedErrorResponseModel,
+    )
+    from summit_rcm_hello_world.rest_api.utils.spectree.models import (
+        HelloWorldResponseModelLegacy,
+    )
+    from summit_rcm.rest_api.utils.spectree.tags import system_tag
+except (ImportError, DocsNotEnabledException):
+    from summit_rcm.rest_api.services.spectree_service import DummyResponse as Response
+
+    UnauthorizedErrorResponseModel = None
+    HelloWorldResponseModelLegacy = None
+    system_tag = None
+
+
+spec = SpectreeService()
 
 
 class HelloWorldResourceLegacy:
@@ -388,15 +476,25 @@ class HelloWorldResourceLegacy:
     Resource to expose 'Hello World' functionality
     """
 
+    @spec.validate(
+        resp=Response(
+            HTTP_200=HelloWorldResponseModelLegacy,
+            HTTP_401=UnauthorizedErrorResponseModel,
+        ),
+        security=SpectreeService().security,
+        tags=[system_tag],
+        deprecated=True,
+    )
     async def on_get(self, req, resp):
         """
-        GET handler for the /helloWorld endpoint
+        Retrieve 'Hello World' message (legacy)
         """
         resp.status = falcon.HTTP_200  # Must specify the status, content_type, and media of the response
         resp.content_type = falcon.MEDIA_JSON
         result = {
             "SDCERR": definition.SUMMIT_RCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "Could not get 'Hello World'",
+            "Message": "",
         }
 
         try:
@@ -407,17 +505,51 @@ class HelloWorldResourceLegacy:
         result["InfoMsg"] = ""
         result["SDCERR"] = definition.SUMMIT_RCM_ERRORS["SDCERR_SUCCESS"]
         resp.media = result
+
 ```
 
 Ex: V2 Endpoint
 ```python
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 """
 Module to support the printing of 'Hello World'
 """
 
 from syslog import LOG_ERR, syslog
 import falcon.asgi
+from summit_rcm.settings import ServerConfig
+from summit_rcm.rest_api.services.spectree_service import (
+    DocsNotEnabledException,
+    SpectreeService,
+)
 from summit_rcm_hello_world.services.hello_world_service import HelloWorldService
+
+try:
+    if not ServerConfig().rest_api_docs_enabled:
+        raise DocsNotEnabledException()
+
+    from spectree import Response
+    from summit_rcm.rest_api.utils.spectree.models import (
+        InternalServerErrorResponseModel,
+        UnauthorizedErrorResponseModel,
+    )
+    from summit_rcm_hello_world.rest_api.utils.spectree.models import (
+        HelloWorldResponseModel,
+    )
+    from summit_rcm.rest_api.utils.spectree.tags import system_tag
+except (ImportError, DocsNotEnabledException):
+    from summit_rcm.rest_api.services.spectree_service import DummyResponse as Response
+
+    InternalServerErrorResponseModel = None
+    UnauthorizedErrorResponseModel = None
+    HelloWorldResponseModel = None
+    system_tag = None
+
+
+spec = SpectreeService()
 
 
 class HelloWorldResource(object):
@@ -425,12 +557,21 @@ class HelloWorldResource(object):
     Resource to handle requests of 'Hello World'
     """
 
+    @spec.validate(
+        resp=Response(
+            HTTP_200=HelloWorldResponseModel,
+            HTTP_401=UnauthorizedErrorResponseModel,
+            HTTP_500=InternalServerErrorResponseModel,
+        ),
+        security=SpectreeService().security,
+        tags=[system_tag],
+    )
     async def on_get(self, _: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
         """
-        GET handler for the /system/helloWorld endpoint
+        Retrieve 'Hello World' message
         """
         try:
-            resp.media["Message"] = HelloWorldService().get_hello_world()  # Must return the status, content_type, and media of the response
+            resp.media = {"Message": HelloWorldService().get_hello_world()}  # Must return the status, content_type, and media of the response
             resp.status = falcon.HTTP_200
             resp.content_type = falcon.MEDIA_JSON
         except Exception as exception:
@@ -439,6 +580,7 @@ class HelloWorldResource(object):
                 f"Unable to get 'Hello World': {str(exception)}",
             )
             resp.status = falcon.HTTP_500
+
 ```
 
-**NOTE:** Due to the open source nature of Summit-RCM, the addition of plugins creates a dynamically easy way for new endpoint/command additions and improvements to be made. Endpoints/commands can be created to reuse existing Summit-RCM services in order to perform specific functions not currently offered. It can also allow for the creation of new services and unrelated endpoints that are needed for specific use-cases.
+**NOTE:** Due to the open source nature of Summit RCM, the addition of plugins creates a dynamically easy way for new endpoint/command additions and improvements to be made. Endpoints/commands can be created to reuse existing Summit RCM services in order to perform specific functions not currently offered. It can also allow for the creation of new services and unrelated endpoints that are needed for specific use-cases.
